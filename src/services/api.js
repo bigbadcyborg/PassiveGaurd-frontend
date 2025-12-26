@@ -30,7 +30,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
-      window.location.href = '/login';
+      // Redirect to login, considering PUBLIC_URL for GitHub Pages
+      const loginPath = process.env.PUBLIC_URL ? `${process.env.PUBLIC_URL}/login` : '/login';
+      window.location.href = loginPath;
     }
     return Promise.reject(error);
   }

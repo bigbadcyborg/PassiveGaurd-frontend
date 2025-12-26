@@ -113,6 +113,12 @@ function MainContent({ isAuthenticated }) {
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('access_token'));
 
+  // #region agent log
+  useEffect(() => {
+    fetch('http://127.0.0.1:7242/ingest/80376fec-ba63-42de-a07a-af79a6d957d3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.js:116',message:'App mounted',data:{isAuthenticated,pathname:window.location.pathname},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+  }, [isAuthenticated]);
+  // #endregion
+
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem('access_token');
@@ -129,7 +135,7 @@ function App() {
   }, []);
 
   return (
-    <Router>
+    <Router basename={process.env.PUBLIC_URL}>
       <div className="App">
         <div className="global-scanline"></div>
         <Navbar />
