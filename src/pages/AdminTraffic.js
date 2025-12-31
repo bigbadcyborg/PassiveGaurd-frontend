@@ -8,6 +8,9 @@ function AdminTraffic() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [workerError, setWorkerError] = useState('');
+  const [emailTestLoading, setEmailTestLoading] = useState(false);
+  const [emailTestResult, setEmailTestResult] = useState(null);
+  const [testEmail, setTestEmail] = useState('');
 
   useEffect(() => {
     fetchTrafficData();
@@ -28,6 +31,26 @@ function AdminTraffic() {
       setWorkerError(err.response?.data?.error || '');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendTestEmail = async () => {
+    setEmailTestLoading(true);
+    setEmailTestResult(null);
+    try {
+      const token = localStorage.getItem('access_token');
+      const payload = testEmail ? { email: testEmail } : {};
+      const response = await axios.post('/api/scheduled-scans/test-email', payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEmailTestResult({ success: true, message: response.data.message });
+    } catch (err) {
+      setEmailTestResult({ 
+        success: false, 
+        message: err.response?.data?.error || 'Failed to send test email' 
+      });
+    } finally {
+      setEmailTestLoading(false);
     }
   };
 
@@ -60,6 +83,45 @@ function AdminTraffic() {
           <div className="stat-label">LAST_WORKER_CHECK</div>
           <div className="stat-value" style={{ fontSize: '14px' }}>{lastChecked}</div>
         </div>
+      </div>
+
+      <div className="card email-test-card">
+        <h2 className="card-title">Email Configuration Test</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '16px', fontSize: '14px' }}>
+          Send a test email with mock scan results to verify SMTP configuration is working correctly.
+        </p>
+        <div className="email-test-form">
+          <input
+            type="email"
+            placeholder="Email address (leave blank to use your admin email)"
+            value={testEmail}
+            onChange={(e) => setTestEmail(e.target.value)}
+            className="form-control"
+            style={{ flex: 1, marginRight: '12px' }}
+          />
+          <button 
+            onClick={sendTestEmail}
+            disabled={emailTestLoading}
+            className="btn btn-primary"
+          >
+            {emailTestLoading ? 'Sending...' : 'Send Test Email'}
+          </button>
+        </div>
+        {emailTestResult && (
+          <div 
+            className={`email-test-result ${emailTestResult.success ? 'success' : 'error'}`}
+            style={{ 
+              marginTop: '16px', 
+              padding: '12px', 
+              borderRadius: '4px',
+              backgroundColor: emailTestResult.success ? 'rgba(0, 255, 136, 0.1)' : 'rgba(255, 77, 136, 0.1)',
+              border: `1px solid ${emailTestResult.success ? 'var(--neon-green)' : 'var(--neon-pink)'}`,
+              color: emailTestResult.success ? 'var(--neon-green)' : 'var(--neon-pink)'
+            }}
+          >
+            {emailTestResult.message}
+          </div>
+        )}
       </div>
 
       <div className="card">

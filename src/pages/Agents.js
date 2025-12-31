@@ -141,9 +141,15 @@ function Agents() {
     let volumePath;
     
     if (osPlatform === 'windows') {
-      // For Windows, convert to WSL path format
-      const wslPath = convertToWslPath(pathToUse);
-      volumePath = wslPath ? `"${wslPath}:/app/projects"` : `"$\u007BPWD}/path/to/your/code:/app/projects"`;
+      // For Windows, use $(pwd) for relative paths or convert absolute paths to WSL format
+      if (pathToUse.match(/^[A-Z]:\\/i)) {
+        // Absolute Windows path - convert to WSL format
+        const wslPath = convertToWslPath(pathToUse);
+        volumePath = `"${wslPath}:/app/projects"`;
+      } else {
+        // Relative path - use $(pwd) prefix
+        volumePath = `"$(pwd)/${pathToUse}:/app/projects"`;
+      }
       return `docker run -d -v ${volumePath} -e HUB_URL="${hubUrl}" -e AGENT_KEY="${agentKey || 'YOUR_AGENT_KEY'}" --name pg-edge-agent passiveguard-agent`;
     } else {
       // For Linux/WSL, use path as-is or with $(pwd) for relative paths

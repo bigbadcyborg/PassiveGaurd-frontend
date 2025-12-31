@@ -12,5 +12,34 @@
   color: var(--neon-pink);
 }
 
+.email-test-card {
+  margin-bottom: 24px;
+}
+
+.email-test-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.email-test-form .form-control {
+  flex: 1;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.email-test-form .form-control:focus {
+  outline: none;
+  border-color: var(--neon-cyan);
+}
+
+.email-test-form .form-control::placeholder {
+  color: var(--text-secondary);
+}
+
 
 

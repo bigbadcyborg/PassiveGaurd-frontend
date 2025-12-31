@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { scansAPI, utilsAPI } from '../services/api';
+import { scansAPI, utilsAPI, scheduledScansAPI } from '../services/api';
 import socketService from '../services/socket';
 import { formatDuration } from '../utils/format';
 import './Scans.css';
@@ -59,7 +59,27 @@ function Scans() {
   });
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const isSentinel = user.role === 'sentinel';
+  const canScheduleScans = user.role === 'overdrive' || user.role === 'nexus' || user.role === 'admin';
   console.log("Scans component initialized", { username: user.username, role: user.role, isSentinel });
+
+  // Scheduled Scans State
+  const [scheduledScans, setScheduledScans] = useState([]);
+  const [scheduledScansLimits, setScheduledScansLimits] = useState({ max_scheduled_scans: 0, current_count: 0 });
+  const [showScheduledForm, setShowScheduledForm] = useState(false);
+  const [scheduledFormData, setScheduledFormData] = useState({
+    name: '',
+    target_path: '',
+    scan_type: 'full',
+    frequency: 'daily',
+    day_of_week: 0,
+    day_of_month: 1,
+    time_of_day: '02:00',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+    email_alerts_enabled: true,
+    alert_on_severity: 'high'
+  });
+  const [editingScheduledScan, setEditingScheduledScan] = useState(null);
+  const [scheduledScansLoading, setScheduledScansLoading] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -80,6 +100,9 @@ function Scans() {
 
   useEffect(() => {
     loadScans();
+    if (canScheduleScans) {
+      loadScheduledScans();
+    }
     
     // Listen for real-time scan updates
     socketService.connect();
@@ -143,6 +166,109 @@ function Scans() {
       console.error('Error loading scans:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadScheduledScans = async () => {
+    setScheduledScansLoading(true);
+    try {
+      const response = await scheduledScansAPI.list();
+      setScheduledScans(response.data.scheduled_scans || []);
+      setScheduledScansLimits(response.data.limits || { max_scheduled_scans: 0, current_count: 0 });
+    } catch (error) {
+      console.error('Error loading scheduled scans:', error);
+      // 403 means feature not available for this tier
+      if (error.response?.status !== 403) {
+        console.error('Unexpected error:', error);
+      }
+    } finally {
+      setScheduledScansLoading(false);
+    }
+  };
+
+  const handleScheduledSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      if (editingScheduledScan) {
+        await scheduledScansAPI.update(editingScheduledScan.id, scheduledFormData);
+      } else {
+        await scheduledScansAPI.create(scheduledFormData);
+      }
+      setShowScheduledForm(false);
+      setEditingScheduledScan(null);
+      resetScheduledForm();
+      loadScheduledScans();
+    } catch (error) {
+      console.error('Error saving scheduled scan:', error);
+      alert(error.response?.data?.message || error.response?.data?.error || 'Error saving scheduled scan');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const resetScheduledForm = () => {
+    setScheduledFormData({
+      name: '',
+      target_path: '',
+      scan_type: 'full',
+      frequency: 'daily',
+      day_of_week: 0,
+      day_of_month: 1,
+      time_of_day: '02:00',
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+      email_alerts_enabled: true,
+      alert_on_severity: 'high'
+    });
+  };
+
+  const handleEditScheduledScan = (scan) => {
+    setEditingScheduledScan(scan);
+    setScheduledFormData({
+      name: scan.name,
+      target_path: scan.target_path,
+      scan_type: scan.scan_type || 'full',
+      frequency: scan.frequency,
+      day_of_week: scan.day_of_week || 0,
+      day_of_month: scan.day_of_month || 1,
+      time_of_day: scan.time_of_day || '02:00',
+      timezone: scan.timezone || 'UTC',
+      email_alerts_enabled: scan.email_alerts_enabled !== false,
+      alert_on_severity: scan.alert_on_severity || 'high'
+    });
+    setShowScheduledForm(true);
+  };
+
+  const handleDeleteScheduledScan = async (id) => {
+    if (window.confirm('Are you sure you want to delete this scheduled scan?')) {
+      try {
+        await scheduledScansAPI.delete(id);
+        loadScheduledScans();
+      } catch (error) {
+        console.error('Error deleting scheduled scan:', error);
+        alert('Failed to delete scheduled scan');
+      }
+    }
+  };
+
+  const handleRunNow = async (id) => {
+    try {
+      await scheduledScansAPI.runNow(id);
+      alert('Scan queued for immediate execution');
+      loadScans(); // Refresh scans list
+    } catch (error) {
+      console.error('Error running scan now:', error);
+      alert(error.response?.data?.error || 'Failed to run scan');
+    }
+  };
+
+  const handleToggleActive = async (scan) => {
+    try {
+      await scheduledScansAPI.update(scan.id, { is_active: !scan.is_active });
+      loadScheduledScans();
+    } catch (error) {
+      console.error('Error toggling scan status:', error);
+      alert('Failed to update scan status');
     }
   };
 
@@ -435,6 +561,271 @@ function Scans() {
               {isSubmitting ? 'Starting...' : 'Start Scan'}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Scheduled Scans Section - Only for Overdrive/Nexus */}
+      {canScheduleScans && (
+        <div className="card scheduled-scans-section">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <div>
+              <h2 className="card-title" style={{ marginBottom: '5px' }}>🔄 Scheduled Scans</h2>
+              <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '14px' }}>
+                Recurring vulnerability scans with email alerts ({scheduledScansLimits.current_count}/{scheduledScansLimits.max_scheduled_scans} used)
+              </p>
+            </div>
+            <button 
+              className="btn btn-primary" 
+              onClick={() => { 
+                setEditingScheduledScan(null); 
+                resetScheduledForm(); 
+                setShowScheduledForm(!showScheduledForm); 
+              }}
+              disabled={scheduledScansLimits.current_count >= scheduledScansLimits.max_scheduled_scans && !showScheduledForm}
+            >
+              {showScheduledForm ? 'Cancel' : '+ New Schedule'}
+            </button>
+          </div>
+
+          {showScheduledForm && (
+            <form onSubmit={handleScheduledSubmit} className="scheduled-scan-form" style={{ marginBottom: '20px', padding: '20px', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+              <h3 style={{ marginTop: 0 }}>{editingScheduledScan ? 'Edit Scheduled Scan' : 'Create Scheduled Scan'}</h3>
+              
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                <div className="form-group">
+                  <label className="form-label">Schedule Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={scheduledFormData.name}
+                    onChange={(e) => setScheduledFormData({ ...scheduledFormData, name: e.target.value })}
+                    placeholder="e.g., Nightly Security Scan"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Target Path</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={scheduledFormData.target_path}
+                    onChange={(e) => setScheduledFormData({ ...scheduledFormData, target_path: e.target.value })}
+                    placeholder="/app/projects/your-repo"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '15px' }}>
+                <div className="form-group">
+                  <label className="form-label">Scan Type</label>
+                  <select
+                    className="form-select"
+                    value={scheduledFormData.scan_type}
+                    onChange={(e) => setScheduledFormData({ ...scheduledFormData, scan_type: e.target.value })}
+                  >
+                    <option value="full">Full Scan</option>
+                    <option value="code">Code Analysis</option>
+                    <option value="config">Config Analysis</option>
+                    <option value="traffic">Network Traffic</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Frequency</label>
+                  <select
+                    className="form-select"
+                    value={scheduledFormData.frequency}
+                    onChange={(e) => setScheduledFormData({ ...scheduledFormData, frequency: e.target.value })}
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Time (UTC)</label>
+                  <input
+                    type="time"
+                    className="form-input"
+                    value={scheduledFormData.time_of_day}
+                    onChange={(e) => setScheduledFormData({ ...scheduledFormData, time_of_day: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              {scheduledFormData.frequency === 'weekly' && (
+                <div className="form-group">
+                  <label className="form-label">Day of Week</label>
+                  <select
+                    className="form-select"
+                    value={scheduledFormData.day_of_week}
+                    onChange={(e) => setScheduledFormData({ ...scheduledFormData, day_of_week: parseInt(e.target.value) })}
+                  >
+                    <option value={0}>Monday</option>
+                    <option value={1}>Tuesday</option>
+                    <option value={2}>Wednesday</option>
+                    <option value={3}>Thursday</option>
+                    <option value={4}>Friday</option>
+                    <option value={5}>Saturday</option>
+                    <option value={6}>Sunday</option>
+                  </select>
+                </div>
+              )}
+
+              {scheduledFormData.frequency === 'monthly' && (
+                <div className="form-group">
+                  <label className="form-label">Day of Month</label>
+                  <select
+                    className="form-select"
+                    value={scheduledFormData.day_of_month}
+                    onChange={(e) => setScheduledFormData({ ...scheduledFormData, day_of_month: parseInt(e.target.value) })}
+                  >
+                    {[...Array(28)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>{i + 1}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginTop: '15px' }}>
+                <div className="form-group">
+                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="checkbox"
+                      checked={scheduledFormData.email_alerts_enabled}
+                      onChange={(e) => setScheduledFormData({ ...scheduledFormData, email_alerts_enabled: e.target.checked })}
+                      style={{ width: 'auto' }}
+                    />
+                    Email alerts enabled
+                  </label>
+                </div>
+                {scheduledFormData.email_alerts_enabled && (
+                  <div className="form-group">
+                    <label className="form-label">Minimum Alert Severity</label>
+                    <select
+                      className="form-select"
+                      value={scheduledFormData.alert_on_severity}
+                      onChange={(e) => setScheduledFormData({ ...scheduledFormData, alert_on_severity: e.target.value })}
+                    >
+                      <option value="low">Low and above</option>
+                      <option value="medium">Medium and above</option>
+                      <option value="high">High only</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? 'Saving...' : (editingScheduledScan ? 'Update Schedule' : 'Create Schedule')}
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={() => { setShowScheduledForm(false); setEditingScheduledScan(null); }}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+
+          {scheduledScansLoading ? (
+            <div className="spinner-small"></div>
+          ) : scheduledScans.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)' }}>No scheduled scans yet. Create one to automate your vulnerability scanning.</p>
+          ) : (
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Target</th>
+                    <th>Frequency</th>
+                    <th>Next Run</th>
+                    <th>Email Alerts</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {scheduledScans.map(scan => (
+                    <tr key={scan.id}>
+                      <td>{scan.name}</td>
+                      <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{scan.target_path}</td>
+                      <td style={{ textTransform: 'capitalize' }}>
+                        {scan.frequency}
+                        {scan.frequency === 'weekly' && ` (${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][scan.day_of_week]})`}
+                        {scan.frequency === 'monthly' && ` (Day ${scan.day_of_month})`}
+                        {' @ '}{scan.time_of_day}
+                      </td>
+                      <td>{scan.next_run_at ? new Date(scan.next_run_at).toLocaleString() : '-'}</td>
+                      <td>
+                        {scan.email_alerts_enabled ? (
+                          <span className="badge badge-success" style={{ background: 'var(--success)', color: 'white', padding: '2px 8px', borderRadius: '4px' }}>
+                            ✓ {scan.alert_on_severity}+
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--text-secondary)' }}>Off</span>
+                        )}
+                      </td>
+                      <td>
+                        <span 
+                          className={`status-badge ${scan.is_active ? 'status-completed' : 'status-failed'}`}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleToggleActive(scan)}
+                          title="Click to toggle"
+                        >
+                          {scan.is_active ? 'Active' : 'Paused'}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                          <button 
+                            onClick={() => handleRunNow(scan.id)} 
+                            className="btn btn-secondary" 
+                            style={{ padding: '4px 8px', fontSize: '11px' }}
+                            title="Run immediately"
+                          >
+                            ▶ Run Now
+                          </button>
+                          <button 
+                            onClick={() => handleEditScheduledScan(scan)} 
+                            className="btn btn-secondary" 
+                            style={{ padding: '4px 8px', fontSize: '11px' }}
+                          >
+                            Edit
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteScheduledScan(scan.id)} 
+                            className="btn btn-danger" 
+                            style={{ padding: '4px 8px', fontSize: '11px' }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Upgrade prompt for Sentinel users */}
+      {isSentinel && (
+        <div className="card" style={{ background: 'linear-gradient(135deg, var(--surface) 0%, var(--background) 100%)', border: '1px solid var(--primary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <span style={{ fontSize: '48px' }}>🔄</span>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ margin: '0 0 5px 0' }}>Scheduled Scans with Email Alerts</h3>
+              <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                Upgrade to Overdrive or Nexus to set up recurring vulnerability scans with automatic email notifications when issues are found.
+              </p>
+            </div>
+            <button className="btn btn-primary" onClick={() => navigate('/pricing')}>
+              Upgrade Now
+            </button>
+          </div>
         </div>
       )}
 

@@ -82,5 +82,15 @@ export const debugAPI = {
   getAgents: () => api.get('/debug/agents'),
 };
 
+export const scheduledScansAPI = {
+  list: () => api.get('/scheduled-scans'),
+  get: (id) => api.get(`/scheduled-scans/${id}`),
+  create: (data) => api.post('/scheduled-scans', data),
+  update: (id, data) => api.put(`/scheduled-scans/${id}`, data),
+  delete: (id) => api.delete(`/scheduled-scans/${id}`),
+  runNow: (id) => api.post(`/scheduled-scans/${id}/run-now`),
+  getHistory: (id) => api.get(`/scheduled-scans/${id}/history`),
+};
+
 export default api;
 
