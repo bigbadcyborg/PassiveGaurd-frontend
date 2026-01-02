@@ -6,6 +6,8 @@ import Scans from './pages/Scans';
 import ScanDetail from './pages/ScanDetail';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
+import ResendVerification from './pages/ResendVerification';
 import Home from './pages/Home';
 import Pricing from './pages/Pricing';
 import AdminUsers from './pages/AdminUsers';
@@ -42,6 +44,8 @@ function MainContent({ isAuthenticated }) {
         <Route path="/home" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-email/:token" element={<VerifyEmail />} />
+        <Route path="/resend-verification" element={<ResendVerification />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route
           path="/"

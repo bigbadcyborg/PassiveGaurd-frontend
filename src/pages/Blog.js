@@ -53,21 +53,21 @@ function Blog() {
   return (
     <div className="blog-page">
       <div className="admin-header" style={{ flexDirection: 'column', alignItems: 'center' }}>
-        <h1 style={{ color: 'var(--neon-cyan)', marginBottom: '10px' }}>SYSTEM_LOG</h1>
+        <h1 style={{ color: 'var(--neon-cyan)', marginBottom: '10px' }}>SYSTEM LOG</h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Latest updates and security broadcasts from the core team.</p>
       </div>
 
       {isAdmin && (
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
           <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-            {showForm ? 'CANCEL_BROADCAST' : 'INITIALIZE_BROADCAST'}
+            {showForm ? 'CANCEL BROADCAST' : 'INITIALIZE BROADCAST'}
           </button>
         </div>
       )}
 
       {showForm && (
         <div className="card" style={{ maxWidth: '800px', margin: '0 auto 40px auto' }}>
-          <h2 className="card-title">NEW_ENTRY</h2>
+          <h2 className="card-title">NEW ENTRY</h2>
           <form onSubmit={handleCreatePost}>
             <div className="form-group">
               <label className="form-label">TITLE</label>
@@ -91,7 +91,7 @@ function Blog() {
               ></textarea>
             </div>
             <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-              {isSubmitting ? 'TRANSMITTING...' : 'POST_LOG_ENTRY'}
+              {isSubmitting ? 'TRANSMITTING...' : 'POST LOG ENTRY'}
             </button>
           </form>
         </div>
@@ -111,7 +111,7 @@ function Blog() {
               <div className="post-footer">
                 <span className="post-author">AUTH: {post.author}</span>
                 <Link to={`/blog/${post.id}`} className="read-more-btn">
-                  VIEW_THREAD ({post.comment_count} FEEDBACK)
+                  VIEW THREAD ({post.comment_count} FEEDBACK)
                 </Link>
               </div>
             </div>

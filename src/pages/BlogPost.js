@@ -54,7 +54,7 @@ function BlogPost() {
     <div className="blog-post-page">
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         <Link to="/blog" className="btn btn-secondary" style={{ marginBottom: '30px', padding: '8px 15px' }}>
-          &lt; BACK_TO_LOG
+          &lt; BACK TO LOG
         </Link>
 
         <article className="full-post card">
@@ -62,7 +62,7 @@ function BlogPost() {
             <span className="post-date">[{new Date(post.created_at).toLocaleString()}]</span>
             <h1 className="post-title" style={{ color: 'var(--neon-cyan)' }}>{post.title}</h1>
             <span className="post-author" style={{ display: 'block', marginTop: '10px' }}>
-              BROADCAST_BY: {post.author}
+              BROADCAST BY: {post.author}
             </span>
           </div>
           <div className="post-content">
@@ -73,7 +73,7 @@ function BlogPost() {
         </article>
 
         <section className="feedback-section">
-          <h2 className="card-title">FEEDBACK_THREAD</h2>
+          <h2 className="card-title">FEEDBACK THREAD</h2>
           
           <div className="comment-form card">
             <form onSubmit={handleAddComment}>
@@ -86,7 +86,7 @@ function BlogPost() {
                 required
               ></textarea>
               <button type="submit" className="btn btn-primary" style={{ marginTop: '15px' }} disabled={isSubmitting}>
-                {isSubmitting ? 'TRANSMITTING...' : 'SEND_FEEDBACK'}
+                {isSubmitting ? 'TRANSMITTING...' : 'SEND FEEDBACK'}
               </button>
             </form>
           </div>

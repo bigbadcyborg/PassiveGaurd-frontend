@@ -814,9 +814,9 @@ function Scans() {
       {/* Upgrade prompt for Sentinel users */}
       {isSentinel && (
         <div className="card" style={{ background: 'linear-gradient(135deg, var(--surface) 0%, var(--background) 100%)', border: '1px solid var(--primary)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', textAlign: 'center' }}>
             <span style={{ fontSize: '48px' }}>🔄</span>
-            <div style={{ flex: 1 }}>
+            <div>
               <h3 style={{ margin: '0 0 5px 0' }}>Scheduled Scans with Email Alerts</h3>
               <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
                 Upgrade to Overdrive or Nexus to set up recurring vulnerability scans with automatic email notifications when issues are found.

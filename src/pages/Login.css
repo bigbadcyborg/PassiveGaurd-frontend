@@ -87,3 +87,46 @@
   height: 50px;
   font-size: 16px;
 }
+
+/* Email verification required styles */
+.verification-required {
+  background-color: rgba(255, 193, 7, 0.1);
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  padding: 20px;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.verification-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.verification-required p {
+  color: #856404;
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.verification-required p:first-of-type {
+  color: var(--text-primary);
+}
+
+.resend-link {
+  display: inline-block;
+  margin-top: 15px;
+  color: var(--neon-cyan);
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 14px;
+  padding: 8px 16px;
+  border: 1px solid var(--neon-cyan);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.resend-link:hover {
+  background: var(--neon-cyan);
+  color: var(--bg-color);
+}

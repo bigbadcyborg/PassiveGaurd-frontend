@@ -156,7 +156,7 @@ const FeatureSlide = ({ feature }) => {
           {feature.description}
         </p>
         <Link to="/register" className="cta-btn" style={{ borderColor: feature.color, color: feature.color }}>
-          SECURE_YOUR_PROJECT
+          SECURE YOUR PROJECT
         </Link>
       </div>
     </div>
@@ -208,8 +208,8 @@ const Home = () => {
             PASSIVEGUARD
           </motion.div>
           <div className="header-actions">
-            <Link to="/login" className="cyber-btn login-btn">ACCESS_SYSTEM</Link>
-            <Link to="/register" className="cyber-btn register-btn">INITIALIZE_USER</Link>
+            <Link to="/login" className="cyber-btn login-btn">ACCESS SYSTEM</Link>
+            <Link to="/register" className="cyber-btn register-btn">INITIALIZE USER</Link>
           </div>
         </header>
       )}
@@ -247,9 +247,9 @@ const Home = () => {
       <footer className="home-footer">
         <div className="footer-status">
           <span className="status-indicator"></span>
-          SYSTEM_STATUS: SECURE
+          SYSTEM STATUS: SECURE
         </div>
-        <div className="footer-version">v1.0.5_STABLE</div>
+        <div className="footer-version">v1.0.5 STABLE</div>
       </footer>
     </div>
   );

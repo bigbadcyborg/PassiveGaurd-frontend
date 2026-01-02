@@ -11,6 +11,8 @@ function Register() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -47,7 +49,8 @@ function Register() {
       const data = await response.json();
 
       if (response.ok) {
-        navigate('/login', { state: { message: 'Registration successful! Please login.' } });
+        setRegisteredEmail(formData.email);
+        setRegistrationSuccess(true);
       } else {
         setError(data.error || 'Registration failed');
       }
@@ -57,6 +60,38 @@ function Register() {
       setLoading(false);
     }
   };
+
+  if (registrationSuccess) {
+    return (
+      <div className="register-container">
+        <div className="register-card">
+          <h1>PassiveGuard</h1>
+          <div className="success-container">
+            <div className="success-icon">✓</div>
+            <h2>Check Your Email</h2>
+            <p>
+              We've sent a verification link to <strong>{registeredEmail}</strong>
+            </p>
+            <p className="instructions">
+              Click the link in the email to verify your account. The link will expire in 24 hours.
+            </p>
+            <div className="success-actions">
+              <Link to="/login" className="btn btn-primary">
+                Go to Login
+              </Link>
+              <Link 
+                to="/resend-verification" 
+                state={{ email: registeredEmail }}
+                className="btn btn-secondary"
+              >
+                Resend Email
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="register-container">

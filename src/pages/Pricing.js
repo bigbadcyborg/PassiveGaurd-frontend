@@ -6,8 +6,8 @@ const PRICING_TIERS = [
   {
     id: 'sentinel',
     name: 'Sentinel',
-    price: { monthly: '$9', annual: '$7' },
-    period: 'per month',
+    price: { monthly: 'TBD', annual: 'TBD' },
+    period: '',
     description: 'Essential security for independent developers.',
     features: [
       { text: 'Unlimited Local Scans', icon: 'scan', tooltip: 'Scan your local codebase as many times as you want.' },
@@ -16,15 +16,16 @@ const PRICING_TIERS = [
       { text: 'Community Support', icon: 'support', tooltip: 'Get help from our community forums and documentation.' },
       { text: 'Single User Access', icon: 'user', tooltip: 'One account for a single developer.' }
     ],
-    buttonText: 'Get Started',
+    buttonText: 'Request Demo',
     highlight: false,
     color: 'cyan'
   },
   {
     id: 'overdrive',
     name: 'Overdrive',
-    price: { monthly: '$29', annual: '$24' },
+    price: { monthly: '$332', annual: '$3,990' },
     period: 'per month',
+    annualNote: '$3,990/year',
     description: 'Automation for growing projects.',
     features: [
       { text: 'Automated Recurring Scans', icon: 'auto', tooltip: 'Set up scans to run automatically on a schedule.' },
@@ -35,14 +36,14 @@ const PRICING_TIERS = [
     ],
     buttonText: 'Upgrade Now',
     highlight: true,
-    badge: '  MOST POPULAR',
+    badge: 'MOST POPULAR',
     color: 'pink'
   },
   {
     id: 'nexus',
     name: 'Nexus Team',
-    price: { monthly: '$99', annual: '$85' },
-    period: 'per month',
+    price: { monthly: 'TBD', annual: 'TBD' },
+    period: '',
     description: 'Advanced collaboration for security teams.',
     features: [
       { text: 'Collaborative Dashboards', icon: 'team', tooltip: 'Shared views for your entire security team.' },
@@ -51,7 +52,7 @@ const PRICING_TIERS = [
       { text: 'Executive Summary Reports', icon: 'summary', tooltip: 'High-level reports designed for management and stakeholders.' },
       { text: 'API Access', icon: 'api', tooltip: 'Integrate PassiveGuard into your existing CI/CD pipelines.' }
     ],
-    buttonText: 'Start Trial',
+    buttonText: 'Request Demo',
     highlight: false,
     color: 'purple'
   },
@@ -70,7 +71,7 @@ const PRICING_TIERS = [
     ],
     buttonText: 'Buy App',
     highlight: false,
-    badge: ' BEST VALUE',
+    badge: 'BEST VALUE',
     color: 'yellow'
   }
 ];
@@ -330,7 +331,11 @@ function Pricing() {
                 >
                   {tier.price[billingCycle]}
                 </motion.span>
-                <span className="price-period">/{tier.period}</span>
+                {tier.period && (
+                  <span className="price-period">
+                    /{tier.id === 'overdrive' && billingCycle === 'annual' ? 'per year' : tier.period}
+                  </span>
+                )}
               </div>
               <p className="tier-description">{tier.description}</p>
             </div>

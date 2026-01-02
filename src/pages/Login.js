@@ -8,6 +8,8 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailNotVerified, setEmailNotVerified] = useState(false);
+  const [unverifiedEmail, setUnverifiedEmail] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
   const successMessage = location.state?.message;
@@ -15,6 +17,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setEmailNotVerified(false);
     setLoading(true);
 
     try {
@@ -32,6 +35,10 @@ function Login() {
         localStorage.setItem('access_token', data.access_token);
         localStorage.setItem('user', JSON.stringify(data.user));
         navigate('/');
+      } else if (data.email_not_verified) {
+        setEmailNotVerified(true);
+        setUnverifiedEmail(data.email || '');
+        setError(data.error);
       } else {
         setError(data.error || 'Login failed');
       }
@@ -49,7 +56,23 @@ function Login() {
         <h2>Login</h2>
         <form onSubmit={handleSubmit}>
           {successMessage && <div style={{ color: '#28a745', marginBottom: '20px', textAlign: 'center', backgroundColor: '#d4edda', padding: '10px', borderRadius: '4px', border: '1px solid #c3e6cb' }}>{successMessage}</div>}
-          {error && <div className="error-message">{error}</div>}
+          {error && !emailNotVerified && <div className="error-message">{error}</div>}
+          
+          {emailNotVerified && (
+            <div className="verification-required">
+              <div className="verification-icon">✉️</div>
+              <p><strong>Email verification required</strong></p>
+              <p>{error}</p>
+              <Link 
+                to="/resend-verification" 
+                state={{ email: unverifiedEmail }}
+                className="resend-link"
+              >
+                Resend verification email
+              </Link>
+            </div>
+          )}
+          
           <div className="form-group">
             <label className="form-label">Username</label>
             <input
