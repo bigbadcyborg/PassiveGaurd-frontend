@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import './Pricing.css';
 
 const PRICING_TIERS = [
@@ -34,7 +35,7 @@ const PRICING_TIERS = [
       { text: 'Cloud Security Posture Management', icon: 'cloud', tooltip: 'Use our high-impact features that bridge the gap between static code analysis and live cloud security.' },
       { text: 'Email Notifications', icon: 'mail', tooltip: 'Get alerted via email as soon as a scan completes.' }
     ],
-    buttonText: 'Upgrade Now',
+    buttonText: 'Buy Now',
     highlight: true,
     badge: 'MOST POPULAR',
     color: 'pink'
@@ -359,10 +360,10 @@ function Pricing() {
             </div>
 
             <div className="card-footer">
-              <button className={`btn-cyber btn-${tier.color}`}>
+              <Link to="/register" className={`btn-cyber btn-${tier.color}`}>
                 <span className="btn-glitch-content">{tier.buttonText}</span>
                 <span className="btn-glitch-effect"></span>
-              </button>
+              </Link>
             </div>
 
             <div className="card-glow"></div>

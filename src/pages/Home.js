@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import ThreatVisualization from '../components/home/ThreatVisualization';
+import BeforeAfterComparison from '../components/home/BeforeAfterComparison';
+import UrgencyBanner from '../components/home/UrgencyBanner';
+import SecurityNewsFeed from '../components/home/SecurityNewsFeed';
+import ValueProposition from '../components/home/ValueProposition';
 import './Home.css';
 
 const IconSearch = () => (
@@ -94,31 +99,8 @@ const features = [
 ];
 
 const FeatureSlide = ({ feature }) => {
-  const videoRef = useRef(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      video.playbackRate = 0.5; // Play at half speed to last 10s
-      video.play().catch(() => {});
-    }
-  }, [feature.video]); // Re-run when video source changes
-
   return (
     <div className="slide-content">
-      {feature.video && (
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          className="slide-bg-video"
-        >
-          <source src={process.env.PUBLIC_URL + feature.video + "?v=2"} type="video/mp4" />
-        </video>
-      )}
       <div className="slide-info" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
         <motion.div 
           className="feature-icon"
@@ -163,10 +145,56 @@ const FeatureSlide = ({ feature }) => {
   );
 };
 
+const BackgroundVideo = ({ features, currentSlide }) => {
+  const videoRefs = useRef([]);
+
+  useEffect(() => {
+    const video = videoRefs.current[currentSlide];
+    if (video) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    }
+  }, [currentSlide]);
+
+  return (
+    <div className="video-background-container" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0, overflow: 'hidden' }}>
+      {features.map((feature, index) => (
+        <video
+          key={index}
+          ref={(el) => {
+            if (el) {
+              videoRefs.current[index] = el;
+              el.playbackRate = 0.5;
+            }
+          }}
+          muted
+          playsInline
+          preload="auto"
+          onEnded={(e) => e.target.pause()} 
+          className={`slide-bg-video ${index === currentSlide ? 'active-zoom' : ''}`}
+          style={{ 
+            opacity: index === currentSlide ? 0.3 : 0,
+            transition: 'opacity 0.5s ease-in-out',
+            display: 'block',
+            visibility: 'visible'
+          }}
+        >
+          <source src={process.env.PUBLIC_URL + feature.video + "?v=2"} type="video/mp4" />
+        </video>
+      ))}
+    </div>
+  );
+};
+
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isGlitching, setIsGlitching] = useState(false);
   const isAuthenticated = !!localStorage.getItem('access_token');
+
+  const sectionVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } }
+  };
 
   // Sync slide transition with 10s video cycle
   useEffect(() => {
@@ -208,49 +236,102 @@ const Home = () => {
             PASSIVEGUARD
           </motion.div>
           <div className="header-actions">
-            <Link to="/login" className="cyber-btn login-btn">ACCESS SYSTEM</Link>
-            <Link to="/register" className="cyber-btn register-btn">INITIALIZE USER</Link>
+            <Link to="/login" className="cyber-btn login-btn">LOGIN</Link>
+            <Link to="/pricing" className="cyber-btn register-btn">PRICING</Link>
           </div>
         </header>
       )}
 
-      <main className="glitch-slider">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentSlide}
-            initial={{ opacity: 0, x: 100, scale: 0.9, filter: 'blur(10px)' }}
-            animate={{ opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, x: -100, scale: 1.1, filter: 'blur(10px)' }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            style={{ width: '100%', height: '100%' }}
-          >
-            <FeatureSlide feature={features[currentSlide]} />
-          </motion.div>
-        </AnimatePresence>
+      <div className="scroll-container">
+        <section className="hero-section">
+          <BackgroundVideo features={features} currentSlide={currentSlide} />
+          <main className="glitch-slider">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentSlide}
+                initial={{ opacity: 0, x: 100, scale: 0.9, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, x: 0, scale: 1, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, x: -100, scale: 1.1, filter: 'blur(10px)' }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                style={{ width: '100%', height: '100%', position: 'relative', zIndex: 1 }}
+              >
+                <FeatureSlide feature={features[currentSlide]} />
+              </motion.div>
+            </AnimatePresence>
 
-        <div className="slider-nav">
-          <button onClick={handlePrev} className="nav-btn">{"<"}</button>
-          <div className="nav-dots">
-            {features.map((_, index) => (
-              <div 
-                key={index} 
-                className={`dot ${index === currentSlide ? 'active' : ''}`}
-                onClick={() => setCurrentSlide(index)}
-                style={{ backgroundColor: index === currentSlide ? features[index].color : 'transparent' }}
-              ></div>
-            ))}
+            <div className="slider-nav">
+              <button onClick={handlePrev} className="nav-btn">{"<"}</button>
+              <div className="nav-dots">
+                {features.map((_, index) => (
+                  <div 
+                    key={index} 
+                    className={`dot ${index === currentSlide ? 'active' : ''}`}
+                    onClick={() => setCurrentSlide(index)}
+                    style={{ backgroundColor: index === currentSlide ? features[index].color : 'transparent' }}
+                  ></div>
+                ))}
+              </div>
+              <button onClick={handleNext} className="nav-btn">{">"}</button>
+            </div>
+          </main>
+        </section>
+
+        <motion.section 
+          className="feature-section"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={sectionVariants}
+        >
+          <div className="container">
+            <h2 className="section-title center">GLOBAL THREAT INTELLIGENCE</h2>
+            <p className="section-description center">
+              Stay ahead of emerging threats with our real-time global intelligence feed. We aggregate and analyze security data from sources worldwide to provide you with the latest vulnerability disclosures, exploit trends, and security advisories relevant to your infrastructure.
+            </p>
+            <SecurityNewsFeed />
           </div>
-          <button onClick={handleNext} className="nav-btn">{">"}</button>
-        </div>
-      </main>
+        </motion.section>
 
-      <footer className="home-footer">
-        <div className="footer-status">
-          <span className="status-indicator"></span>
-          SYSTEM STATUS: SECURE
-        </div>
-        <div className="footer-version">v1.0.5 STABLE</div>
-      </footer>
+        <motion.section 
+          className="feature-section alt-bg"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={sectionVariants}
+        >
+          <ValueProposition />
+        </motion.section>
+
+        <motion.section 
+          className="feature-section"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={sectionVariants}
+        >
+          <ThreatVisualization />
+        </motion.section>
+
+        <motion.section 
+          className="feature-section alt-bg"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={sectionVariants}
+        >
+          <BeforeAfterComparison />
+        </motion.section>
+
+        <footer className="home-footer">
+          <div className="footer-status">
+            <span className="status-indicator"></span>
+            SYSTEM STATUS: SECURE
+          </div>
+          <div className="footer-version">v1.0.5 STABLE</div>
+        </footer>
+      </div>
+
+      <UrgencyBanner />
     </div>
   );
 };
